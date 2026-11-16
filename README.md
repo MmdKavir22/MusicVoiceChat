@@ -13,9 +13,10 @@ Minecraft 26.2 or 26.3, Fabric Loader 0.20.1+, Fabric API, Simple Voice Chat (fo
 4. Extract the ZIP and copy the JAR to the `mods` folder.
 
 ## Use
-A small "MusicBot" window opens when the game starts. Choose a WAV file, press Play. Join a voice chat group and talk/transmit.
+In game, type `/music` to open the MusicBot window. Add WAV files or a direct WAV link to the queue, press Play/Skip/Prev/Pause/Stop.
+Enter a Simple Voice Chat group ID (and password if any) and press **Join group**: the mod sends `/voicechat join <id>` for you.
 
 ## Status / limitations
-- Not tested; the `MergeClientSoundEvent` API names are unverified and may need adjusting if the build fails.
+- Not tested; the `/music` command classes (ClientCommands) and `Minecraft.player.connection.sendCommand` names are unverified for 26.x; the `MergeClientSoundEvent` API names are unverified and may need adjusting if the build fails.
 - Only WAV/AU/AIFF so far. No MP3/video/URL, playlist, sync, or DJ system yet.
 - No Gradle wrapper is committed; the workflow installs Gradle itself.
