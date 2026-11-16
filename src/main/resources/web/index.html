@@ -68,11 +68,19 @@
 
   <section class="card">
     <h2>Add music</h2>
-    <div class="sub">Direct link (MP3 or WAV)</div>
+    <div class="sub">Direct link (mp3, wav, m4a, mp4, flac, ogg...)</div>
     <div class="row"><input type="text" id="url" placeholder="https://example.com/song.mp3"><button class="p" onclick="addLink()">Add</button></div>
-    <div class="sub" style="margin-top:16px">Folder on this PC (MP3/WAV)</div>
+    <div class="sub" style="margin-top:16px">Folder on this PC (audio and video files)</div>
     <div class="row"><input type="text" id="folder" placeholder="C:\Music"><button onclick="browse()">Browse…</button></div>
     <div class="row"><label class="chk"><input type="checkbox" id="sub"> include subfolders</label><button class="p" onclick="addFolder()">Add folder</button></div>
+  </section>
+
+  <section class="card full">
+    <h2>Engine</h2>
+    <div class="sub" id="ff"></div>
+    <div class="row"><button id="ffb" class="p" onclick="act('install-ffmpeg')">Install FFmpeg</button>
+      <label class="chk"><input type="checkbox" id="mon" onchange="act('monitor',{on:this.checked?'1':'0'})"> hear music locally (test)</label></div>
+    <div class="sub" id="dbg" style="margin-top:8px"></div>
   </section>
 
   <section class="card full">
@@ -114,6 +122,9 @@ function render(){
   $('rep').classList.toggle('on',S.repeat);$('shu').classList.toggle('on',S.shuffle);
   if(!dragging){$('vol').value=S.volume;$('volv').textContent=S.volume+'%'}
   $('msg').textContent=S.msg||'';$('voice').textContent=S.voice&&S.voice!=='Not set'?S.voice:'';
+  $('ff').textContent=S.ffmpeg;$('ffb').style.display=S.ffmpegOk?'none':'';
+  $('mon').checked=!!S.monitor;
+  $('dbg').textContent='Voice engine calls: '+S.calls+' | frames mixed into voice: '+S.mixed;
   const q=$('queue');
   if(q.dataset.sig!==JSON.stringify([S.queue,S.current])){
     q.dataset.sig=JSON.stringify([S.queue,S.current]);q.innerHTML='';

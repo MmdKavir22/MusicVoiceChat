@@ -134,6 +134,8 @@ public final class WebServer {
             case "/api/add-folder" -> c.addFolder(p.get("path"), "1".equals(p.get("sub")));
             case "/api/remove" -> c.remove(num(p.get("i"), -1));
             case "/api/clear" -> c.clear();
+            case "/api/monitor" -> c.setMonitor("1".equals(p.get("on")));
+            case "/api/install-ffmpeg" -> Ffmpeg.install();
             case "/api/join" -> {
                 String id = p.getOrDefault("id", "").trim();
                 c.setVoice(id.isEmpty() ? "Enter a group ID" : VoiceGroup.join(id, p.get("pw")));

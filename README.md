@@ -20,5 +20,5 @@ The web server listens on 127.0.0.1 only (not reachable from other computers).
 
 ## Status / limitations
 - Not tested; the `/music` command classes (ClientCommands) and `Minecraft.player.connection.sendCommand` names are unverified for 26.x; the `MergeClientSoundEvent` API names are unverified and may need adjusting if the build fails.
-- MP3 and WAV only (OGG/FLAC/M4A/video not yet). MP3 uses JLayer bundled via jar-in-jar (unverified). No MP3/video/URL, playlist, sync, or DJ system yet.
+- MP3/WAV decode natively (JLayer). mp4, m4a, aac, flac, ogg, opus, mkv, webm, avi, mov need FFmpeg: click Install FFmpeg in the panel (Windows, downloads from gyan.dev) or put ffmpeg.exe in the `musicbot` folder of your game directory. No MP3/video/URL, playlist, sync, or DJ system yet.
 - No Gradle wrapper is committed; the workflow installs Gradle itself.

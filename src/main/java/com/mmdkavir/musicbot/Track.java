@@ -23,7 +23,20 @@ public record Track(String name, File file, String url) {
     }
 
     public Decoded open() throws Exception {
-        boolean mp3 = name.toLowerCase(Locale.ROOT).endsWith(".mp3");
+        String n = name.toLowerCase(Locale.ROOT);
+        boolean mp3 = n.endsWith(".mp3");
+        boolean wav = n.endsWith(".wav");
+        String source = file != null ? file.getAbsolutePath() : url;
+        if (!mp3 && !wav) return new FfmpegDecoded(source); // mp4, m4a, aac, flac, ogg, mkv, ...
+        try {
+            return openNative(mp3);
+        } catch (Exception e) {
+            if (Ffmpeg.available()) return new FfmpegDecoded(source); // odd file: let FFmpeg try
+            throw e;
+        }
+    }
+
+    private Decoded openNative(boolean mp3) throws Exception {
         if (file != null) {
             if (mp3) return new Mp3Decoded(new BufferedInputStream(new FileInputStream(file)), file.length());
             return new WavDecoded(AudioSystem.getAudioInputStream(file));

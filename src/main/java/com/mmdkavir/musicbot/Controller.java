@@ -12,6 +12,8 @@ import java.util.stream.Stream;
 
 /** Queue + settings shared by the web UI. All public methods are thread-safe. */
 public final class Controller {
+    private static final String[] EXTS = {".mp3", ".wav", ".m4a", ".mp4", ".aac", ".flac", ".ogg", ".opus",
+            ".wma", ".webm", ".mkv", ".avi", ".mov", ".m4b"};
     private final MusicPlayer player;
     private final List<Track> tracks = new ArrayList<>();
     private final Random random = new Random();
@@ -64,6 +66,7 @@ public final class Controller {
 
     public synchronized void setRepeat(boolean b) { repeat = b; }
     public synchronized void setShuffle(boolean b) { shuffle = b; }
+    public synchronized void setMonitor(boolean on) { player.setMonitor(on); }
     public synchronized void setVoice(String s) { voice = s; }
 
     public synchronized void remove(int i) {
@@ -96,13 +99,14 @@ public final class Controller {
         try (Stream<Path> s = Files.walk(dir.toPath(), subfolders ? 6 : 1)) {
             found = s.filter(Files::isRegularFile).filter(p -> {
                 String n = p.getFileName().toString().toLowerCase(Locale.ROOT);
-                return n.endsWith(".mp3") || n.endsWith(".wav");
+                for (String ext : EXTS) if (n.endsWith(ext)) return true;
+                return false;
             }).sorted().toList();
         } catch (IOException e) {
             message = "Cannot read folder: " + e.getMessage();
             return;
         }
-        if (found.isEmpty()) { message = "No MP3/WAV files in that folder"; return; }
+        if (found.isEmpty()) { message = "No supported audio/video files in that folder"; return; }
         int first = tracks.size();
         for (Path p : found) tracks.add(Track.ofFile(p.toFile()));
         message = "Added " + found.size() + " tracks";
@@ -122,6 +126,11 @@ public final class Controller {
           .append(",\"volume\":").append(volume)
           .append(",\"voice\":").append(q(voice))
           .append(",\"msg\":").append(q(message))
+          .append(",\"ffmpeg\":").append(q(Ffmpeg.status()))
+          .append(",\"ffmpegOk\":").append(Ffmpeg.available())
+          .append(",\"monitor\":").append(player.isMonitor())
+          .append(",\"calls\":").append(player.calls())
+          .append(",\"mixed\":").append(player.positionMs() / 20)
           .append(",\"queue\":[");
         for (int i = 0; i < tracks.size(); i++) {
             if (i > 0) sb.append(',');
