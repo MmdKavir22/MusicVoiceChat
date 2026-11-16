@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MusicBot</title>
+<style>
+  :root{--bg:#0e0e16;--card:#1a1a27;--card2:#232336;--fg:#f0f0fa;--mut:#9494b0;--acc:#7c5cff;--acc2:#4cc9f0;--ok:#3ddc97;--bad:#ff6b81}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(circle at 20% 0%,#1d1840 0,var(--bg) 45%);color:var(--fg);font-family:system-ui,Segoe UI,Roboto,sans-serif;min-height:100vh}
+  .wrap{max-width:920px;margin:0 auto;padding:20px;display:grid;gap:16px;grid-template-columns:1fr 1fr}
+  @media(max-width:760px){.wrap{grid-template-columns:1fr}}
+  header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between}
+  h1{margin:0;font-size:26px;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;color:transparent}
+  .card{background:var(--card);border:1px solid #2c2c44;border-radius:16px;padding:16px}
+  .full{grid-column:1/-1}
+  h2{margin:0 0 10px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+  .title{font-size:20px;font-weight:700;margin-bottom:4px;word-break:break-word}
+  .sub{color:var(--mut);font-size:13px}
+  .bar{height:8px;border-radius:99px;background:var(--card2);margin:14px 0 6px;overflow:hidden}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .3s}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  button{background:var(--card2);color:var(--fg);border:1px solid #34344f;border-radius:10px;padding:9px 14px;font-size:14px;cursor:pointer;transition:.15s}
+  button:hover{border-color:var(--acc);transform:translateY(-1px)}
+  button.p{background:var(--acc);border-color:var(--acc)}
+  button.on{background:var(--acc2);color:#04131a;border-color:var(--acc2)}
+  input[type=text],input[type=password]{flex:1;min-width:120px;background:var(--bg);color:var(--fg);border:1px solid #34344f;border-radius:10px;padding:9px 12px;font-size:14px}
+  input[type=range]{flex:1;accent-color:var(--acc)}
+  label.chk{font-size:13px;color:var(--mut);display:flex;gap:6px;align-items:center}
+  ul{list-style:none;margin:0;padding:0;max-height:300px;overflow:auto}
+  li{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;cursor:pointer}
+  li:hover{background:var(--card2)}
+  li.cur{background:rgba(124,92,255,.22)}
+  li span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  li b{color:var(--mut);width:24px;text-align:right}
+  li button{padding:3px 8px}
+  .msg{color:var(--acc2);font-size:13px;min-height:18px;margin-top:8px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bad);margin-right:6px}
+  .dot.live{background:var(--ok)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>MusicBot</h1><div class="sub"><span id="dot" class="dot"></span><span id="conn">connecting…</span></div></header>
+
+  <section class="card full">
+    <h2>Now playing</h2>
+    <div class="title" id="title">Nothing playing</div>
+    <div class="sub" id="status">Idle</div>
+    <div class="bar"><i id="fill"></i></div>
+    <div class="sub" id="time">0:00 / --:--</div>
+    <div class="row">
+      <button onclick="act('prev')">⏮ Prev</button>
+      <button class="p" id="pp" onclick="togglePause()">⏸ Pause</button>
+      <button onclick="act('next')">⏭ Skip</button>
+      <button onclick="act('stop')">⏹ Stop</button>
+      <button id="rep" onclick="toggle('repeat')">🔁 Repeat</button>
+      <button id="shu" onclick="toggle('shuffle')">🔀 Shuffle</button>
+    </div>
+    <div class="row"><span class="sub">Music volume</span><input type="range" id="vol" min="0" max="200" value="50"><span class="sub" id="volv">50%</span></div>
+  </section>
+
+  <section class="card">
+    <h2>Queue</h2>
+    <ul id="queue"></ul>
+    <div class="row"><button onclick="act('clear')">Clear queue</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Add music</h2>
+    <div class="sub">Direct link (MP3 or WAV)</div>
+    <div class="row"><input type="text" id="url" placeholder="https://example.com/song.mp3"><button class="p" onclick="addLink()">Add</button></div>
+    <div class="sub" style="margin-top:16px">Folder on this PC (MP3/WAV)</div>
+    <div class="row"><input type="text" id="folder" placeholder="C:\Music"><button onclick="browse()">Browse…</button></div>
+    <div class="row"><label class="chk"><input type="checkbox" id="sub"> include subfolders</label><button class="p" onclick="addFolder()">Add folder</button></div>
+  </section>
+
+  <section class="card full">
+    <h2>Voice chat group</h2>
+    <div class="sub">Enter the Simple Voice Chat group ID. The mod sends <code>/voicechat join</code> for you.</div>
+    <div class="row"><input type="text" id="gid" placeholder="Group ID"><input type="password" id="gpw" placeholder="Password (optional)"></div>
+    <div class="row"><button class="p" onclick="join()">Join group</button><button onclick="act('leave')">Leave group</button></div>
+    <div class="msg" id="voice"></div>
+  </section>
+
+  <div class="msg full" id="msg"></div>
+</div>
+<script>
+let S={}, volTimer=null, dragging=false;
+const $=id=>document.getElementById(id);
+const fmt=ms=>{const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+async function post(path,data){
+  const r=await fetch('/api/'+path,{method:'POST',headers:{'X-MusicBot':'1','Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(data||{})});
+  return r.json();
+}
+async function act(p,d){const s=await post(p,d);if(s.status!==undefined){S=s;render()}}
+function togglePause(){act(S.paused?'resume':'pause')}
+function toggle(k){act(k,{on:S[k]?'0':'1'})}
+function addLink(){const u=$('url').value.trim();if(u){act('add-link',{url:u});$('url').value=''}}
+function addFolder(){const p=$('folder').value.trim();if(p)act('add-folder',{path:p,sub:$('sub').checked?'1':'0'})}
+async function browse(){const r=await post('browse');if(r.path){$('folder').value=r.path}}
+function join(){act('join',{id:$('gid').value,pw:$('gpw').value})}
+$('vol').addEventListener('input',e=>{
+  $('volv').textContent=e.target.value+'%';dragging=true;
+  clearTimeout(volTimer);volTimer=setTimeout(()=>{act('volume',{v:e.target.value});dragging=false},120);
+});
+function render(){
+  $('title').textContent=S.current>=0&&S.queue[S.current]?S.queue[S.current]:'Nothing playing';
+  $('status').textContent=S.status;
+  const pct=S.dur>0?Math.min(100,S.pos*100/S.dur):0;
+  $('fill').style.width=pct+'%';
+  $('time').textContent=fmt(S.pos)+' / '+(S.dur>0?fmt(S.dur):'--:--');
+  $('pp').textContent=S.paused?'▶ Resume':'⏸ Pause';
+  $('rep').classList.toggle('on',S.repeat);$('shu').classList.toggle('on',S.shuffle);
+  if(!dragging){$('vol').value=S.volume;$('volv').textContent=S.volume+'%'}
+  $('msg').textContent=S.msg||'';$('voice').textContent=S.voice&&S.voice!=='Not set'?S.voice:'';
+  const q=$('queue');
+  if(q.dataset.sig!==JSON.stringify([S.queue,S.current])){
+    q.dataset.sig=JSON.stringify([S.queue,S.current]);q.innerHTML='';
+    S.queue.forEach((n,i)=>{
+      const li=document.createElement('li');if(i===S.current)li.className='cur';
+      li.onclick=()=>act('play',{i});
+      li.innerHTML='<b>'+(i+1)+'</b><span></span><button title="Remove">✕</button>';
+      li.querySelector('span').textContent=n;
+      li.querySelector('button').onclick=e=>{e.stopPropagation();act('remove',{i})};
+      q.appendChild(li);
+    });
+  }
+}
+async function poll(){
+  try{const r=await fetch('/api/state');S=await r.json();$('dot').className='dot live';$('conn').textContent='connected';if(!dragging)render()}
+  catch(e){$('dot').className='dot';$('conn').textContent='disconnected (is Minecraft running?)'}
+}
+setInterval(poll,500);poll();
+</script>
+</body>
+</html>

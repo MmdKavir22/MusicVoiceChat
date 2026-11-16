@@ -1,9 +1,5 @@
 package com.mmdkavir.musicbot;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -12,7 +8,6 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Decodes a track on a worker thread into 48 kHz mono 16-bit PCM frames (960 samples = 20 ms).
  * The voice chat thread only polls frames; it never blocks.
- * Formats: whatever the JDK decodes (WAV/AU/AIFF). MP3/OGG/FLAC need extra libraries (later phase).
  */
 public final class MusicPlayer {
     public static final int RATE = 48000;
@@ -79,18 +74,11 @@ public final class MusicPlayer {
 
     private void decode(Track track) {
         Thread me = Thread.currentThread();
-        try (AudioInputStream raw = track.open()) {
-            AudioFormat src = raw.getFormat();
-            int ch = src.getChannels();
-            if (raw.getFrameLength() > 0 && src.getFrameRate() > 0) {
-                durationMs = (long) (raw.getFrameLength() * 1000.0 / src.getFrameRate());
-            }
-            AudioFormat pcmFmt = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED,
-                    src.getSampleRate(), 16, ch, ch * 2, src.getSampleRate(), false);
-            try (AudioInputStream pcm = AudioSystem.getAudioInputStream(pcmFmt, raw)) {
-                status = "Playing";
-                stream(pcm, ch, src.getSampleRate(), me);
-            }
+        try (Decoded d = track.open()) {
+            if (worker != me) return;
+            durationMs = d.durationMs();
+            status = "Playing";
+            stream(d, me);
         } catch (InterruptedException e) {
             return; // stopped
         } catch (Exception e) {
@@ -111,30 +99,16 @@ public final class MusicPlayer {
         }
     }
 
-    private void stream(AudioInputStream in, int ch, float srcRate, Thread me)
-            throws IOException, InterruptedException {
-        final double step = srcRate / (double) RATE;
-        final int frameBytes = ch * 2;
-        byte[] buf = new byte[frameBytes * 4096];
-        int len = 0, idx = 0;
+    private void stream(Decoded d, Thread me) throws Exception {
+        final double step = d.rate() / (double) RATE;
         float prev = 0f, cur = 0f;
         double frac = 0;
         short[] out = new short[FRAME];
         int n = 0;
         boolean first = true;
         while (worker == me) {
-            if (idx + frameBytes > len) {
-                len = in.read(buf, 0, buf.length);
-                idx = 0;
-                if (len < frameBytes) break;
-            }
-            float sum = 0;
-            for (int c = 0; c < ch; c++) {
-                int lo = buf[idx] & 0xff, hi = buf[idx + 1];
-                sum += (short) ((hi << 8) | lo);
-                idx += 2;
-            }
-            float next = sum / ch;
+            float next = d.nextMono();
+            if (Float.isNaN(next)) break;
             if (first) { prev = next; cur = next; first = false; frac = 0; continue; }
             prev = cur;
             cur = next;
