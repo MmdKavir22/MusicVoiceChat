@@ -22,7 +22,7 @@ public final class MusicBotClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (openGui) {
                 openGui = false;
-                client.setScreen(new MusicScreen());
+                client.gui.setScreen(new MusicScreen());
             }
         });
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
