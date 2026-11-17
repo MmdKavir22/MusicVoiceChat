@@ -102,7 +102,12 @@ public final class MusicScreen extends Screen {
         btn("Browse", x0 + 242, by + 22, 70, () -> {
             Thread t = new Thread(() -> {
                 String p = WebServer.browse();
-                if (!p.isEmpty()) { folder = p; Minecraft.getInstance().execute(this::rebuildWidgets); }
+                if (p.isEmpty()) {
+                    c.setMessage("No folder chosen (dialog cancelled or unavailable) - type the path instead");
+                } else {
+                    folder = p;
+                    Minecraft.getInstance().execute(this::rebuildWidgets);
+                }
             }, "MusicBot-Browse");
             t.setDaemon(true);
             t.start();

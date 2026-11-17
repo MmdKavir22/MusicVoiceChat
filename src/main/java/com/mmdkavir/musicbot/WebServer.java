@@ -143,15 +143,38 @@ public final class WebServer {
             }
             case "/api/leave" -> c.setVoice(VoiceGroup.leave());
             case "/api/browse" -> {
-                return "{\"path\":" + Controller.q(browse()) + "}";
+                String chosen = browse();
+                if (chosen.isEmpty()) c.setMessage("No folder chosen (cancelled or unavailable) - type the path instead");
+                return "{\"path\":" + Controller.q(chosen) + "}";
             }
             default -> { return "{\"msg\":\"Unknown action\"}"; }
         }
         return c.stateJson();
     }
 
-    /** Opens a native folder chooser on the PC and returns the chosen path ("" if cancelled/unavailable). */
+    /**
+     * Opens a native folder chooser on the PC and returns the chosen path ("" if cancelled or unavailable).
+     * On Windows it uses a PowerShell folder dialog (works even when AWT/Swing is unavailable inside the game),
+     * elsewhere it falls back to Swing.
+     */
     static String browse() {
+        boolean windows = System.getProperty("os.name", "").toLowerCase().contains("win");
+        if (windows) {
+            try {
+                String script = "Add-Type -AssemblyName System.Windows.Forms; "
+                        + "$o = New-Object System.Windows.Forms.Form; $o.TopMost = $true; "
+                        + "$d = New-Object System.Windows.Forms.FolderBrowserDialog; "
+                        + "$d.Description = 'Choose a music folder'; $d.ShowNewFolderButton = $false; "
+                        + "if ($d.ShowDialog($o) -eq 'OK') { [Console]::Out.Write($d.SelectedPath) }";
+                Process p = new ProcessBuilder("powershell", "-NoProfile", "-STA", "-WindowStyle", "Hidden",
+                        "-Command", script).redirectError(ProcessBuilder.Redirect.DISCARD).start();
+                String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+                p.waitFor(10, java.util.concurrent.TimeUnit.SECONDS);
+                return out;
+            } catch (Exception ignored) {
+                // fall through to Swing
+            }
+        }
         final String[] result = {""};
         try {
             SwingUtilities.invokeAndWait(() -> {

@@ -75,6 +75,7 @@ public final class Controller {
     public synchronized void setRepeat(boolean b) { repeat = b; }
     public synchronized void setShuffle(boolean b) { shuffle = b; }
     public synchronized void setMonitor(boolean on) { player.setMonitor(on); }
+    public synchronized void setMessage(String m) { message = m; }
     public synchronized void setVoice(String s) { voice = s; }
 
     public synchronized void remove(int i) {
