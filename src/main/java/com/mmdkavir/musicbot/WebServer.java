@@ -122,6 +122,7 @@ public final class WebServer {
     private String route(String path, Map<String, String> p) {
         switch (path) {
             case "/api/play" -> c.playIndex(num(p.get("i"), -1));
+            case "/api/volume-local" -> c.setLocalVolume(num(p.get("v"), 50));
             case "/api/pause" -> c.pause();
             case "/api/resume" -> c.resume();
             case "/api/stop" -> c.stop();
@@ -150,7 +151,7 @@ public final class WebServer {
     }
 
     /** Opens a native folder chooser on the PC and returns the chosen path ("" if cancelled/unavailable). */
-    private static String browse() {
+    static String browse() {
         final String[] result = {""};
         try {
             SwingUtilities.invokeAndWait(() -> {

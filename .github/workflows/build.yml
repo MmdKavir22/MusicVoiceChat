@@ -16,8 +16,13 @@ jobs:
             fabric_api: "0.161.0+26.2"
           - mc: "26.3"
             fabric_api: "0.163.0+26.3"
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+
+      - id: ver
+        run: echo "version=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v4
         with:
@@ -31,11 +36,39 @@ jobs:
       - name: Build
         run: gradle build --no-daemon -Pminecraft_version=${{ matrix.mc }} -Pfabric_version=${{ matrix.fabric_api }}
 
+      - name: Collect installable JAR
+        run: |
+          mkdir -p dist
+          JAR=$(ls build/libs/MusicBot-*.jar | grep -v -- '-sources' | head -n1)
+          cp "$JAR" "dist/MusicBot-${{ matrix.mc }}-Fabric.jar"
+          ls -l dist
+
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: MusicBot-Minecraft-${{ matrix.mc }}-Fabric
-          path: |
-            build/libs/MusicBot-*.jar
-            !build/libs/*-sources.jar
+          path: dist/*.jar
           if-no-files-found: error
+
+  release:
+    # Runs on every push and every manual run (not on pull requests), after both builds succeeded.
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: MusicBot-Minecraft-*
+          merge-multiple: true
+          path: dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.build.outputs.version }}-build.${{ github.run_number }}
+          name: MusicBot ${{ needs.build.outputs.version }} (build ${{ github.run_number }})
+          target_commitish: ${{ github.sha }}
+          files: dist/*.jar
+          generate_release_notes: true

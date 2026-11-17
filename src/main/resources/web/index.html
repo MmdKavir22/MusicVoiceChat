@@ -57,7 +57,8 @@
       <button id="rep" onclick="toggle('repeat')">🔁 Repeat</button>
       <button id="shu" onclick="toggle('shuffle')">🔀 Shuffle</button>
     </div>
-    <div class="row"><span class="sub">Music volume</span><input type="range" id="vol" min="0" max="200" value="50"><span class="sub" id="volv">50%</span></div>
+    <div class="row"><span class="sub" style="width:130px">Volume for others</span><input type="range" id="vol" min="0" max="200" value="50"><span class="sub" id="volv">50%</span></div>
+    <div class="row"><span class="sub" style="width:130px">Volume for me</span><input type="range" id="lvol" min="0" max="200" value="50"><span class="sub" id="lvolv">50%</span></div>
   </section>
 
   <section class="card">
@@ -79,7 +80,7 @@
     <h2>Engine</h2>
     <div class="sub" id="ff"></div>
     <div class="row"><button id="ffb" class="p" onclick="act('install-ffmpeg')">Install FFmpeg</button>
-      <label class="chk"><input type="checkbox" id="mon" onchange="act('monitor',{on:this.checked?'1':'0'})"> hear music locally (test)</label></div>
+      <label class="chk"><input type="checkbox" id="mon" onchange="act('monitor',{on:this.checked?'1':'0'})"> hear the music myself</label></div>
     <div class="sub" id="dbg" style="margin-top:8px"></div>
   </section>
 
@@ -112,6 +113,10 @@ $('vol').addEventListener('input',e=>{
   $('volv').textContent=e.target.value+'%';dragging=true;
   clearTimeout(volTimer);volTimer=setTimeout(()=>{act('volume',{v:e.target.value});dragging=false},120);
 });
+$('lvol').addEventListener('input',e=>{
+  $('lvolv').textContent=e.target.value+'%';dragging=true;
+  clearTimeout(volTimer);volTimer=setTimeout(()=>{act('volume-local',{v:e.target.value});dragging=false},120);
+});
 function render(){
   $('title').textContent=S.current>=0&&S.queue[S.current]?S.queue[S.current]:'Nothing playing';
   $('status').textContent=S.status;
@@ -120,7 +125,7 @@ function render(){
   $('time').textContent=fmt(S.pos)+' / '+(S.dur>0?fmt(S.dur):'--:--');
   $('pp').textContent=S.paused?'▶ Resume':'⏸ Pause';
   $('rep').classList.toggle('on',S.repeat);$('shu').classList.toggle('on',S.shuffle);
-  if(!dragging){$('vol').value=S.volume;$('volv').textContent=S.volume+'%'}
+  if(!dragging){$('vol').value=S.volume;$('volv').textContent=S.volume+'%';$('lvol').value=S.localVolume;$('lvolv').textContent=S.localVolume+'%'}
   $('msg').textContent=S.msg||'';$('voice').textContent=S.voice&&S.voice!=='Not set'?S.voice:'';
   $('ff').textContent=S.ffmpeg;$('ffb').style.display=S.ffmpegOk?'none':'';
   $('mon').checked=!!S.monitor;

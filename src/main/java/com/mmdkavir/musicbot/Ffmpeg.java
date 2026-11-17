@@ -47,6 +47,8 @@ final class Ffmpeg {
         return status.isEmpty() ? "FFmpeg not installed (needed for mp4, m4a, flac, ogg, mkv...)" : status;
     }
 
+    static void installAsync() { install(); }
+
     static synchronized void install() {
         if (installing || available()) return;
         if (!WINDOWS) {

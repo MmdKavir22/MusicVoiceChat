@@ -19,13 +19,16 @@ public final class Controller {
     private final Random random = new Random();
     private int current = -1;
     private boolean repeat, shuffle;
-    private int volume = 50;
+    private int volume = 50;      // volume other players hear (voice)
+    private int localVolume = 50;  // volume you hear
     private String message = "";
     private String voice = "Not set";
 
     public Controller(MusicPlayer player) {
         this.player = player;
         player.setGain(volume / 100f);
+        player.setLocalGain(localVolume / 100f);
+        player.setMonitor(true);
         player.setOnFinish(() -> next(true));
     }
 
@@ -62,6 +65,11 @@ public final class Controller {
     public synchronized void setVolume(int v) {
         volume = Math.max(0, Math.min(200, v));
         player.setGain(volume / 100f);
+    }
+
+    public synchronized void setLocalVolume(int v) {
+        localVolume = Math.max(0, Math.min(200, v));
+        player.setLocalGain(localVolume / 100f);
     }
 
     public synchronized void setRepeat(boolean b) { repeat = b; }
@@ -113,6 +121,20 @@ public final class Controller {
         if (!player.isActive()) playIndex(first);
     }
 
+    public record Snapshot(String status, boolean active, boolean paused, long pos, long dur, int current,
+                           boolean repeat, boolean shuffle, int volume, String voice, String msg,
+                           List<String> queue, boolean ffOk, String ff, boolean monitor, long calls,
+                           int localVolume, long mixed) { }
+
+    public synchronized Snapshot snapshot() {
+        List<String> names = new ArrayList<>();
+        for (Track t : tracks) names.add(t.name());
+        return new Snapshot(player.status(), player.isActive(), player.isPaused(), player.positionMs(),
+                player.durationMs(), current, repeat, shuffle, volume, voice, message, names,
+                Ffmpeg.available(), Ffmpeg.status(), player.isMonitor(), player.calls(),
+                localVolume, player.mixed());
+    }
+
     public synchronized String stateJson() {
         StringBuilder sb = new StringBuilder(512);
         sb.append("{\"status\":").append(q(player.status()))
@@ -130,7 +152,8 @@ public final class Controller {
           .append(",\"ffmpegOk\":").append(Ffmpeg.available())
           .append(",\"monitor\":").append(player.isMonitor())
           .append(",\"calls\":").append(player.calls())
-          .append(",\"mixed\":").append(player.positionMs() / 20)
+          .append(",\"mixed\":").append(player.mixed())
+          .append(",\"localVolume\":").append(localVolume)
           .append(",\"queue\":[");
         for (int i = 0; i < tracks.size(); i++) {
             if (i > 0) sb.append(',');
