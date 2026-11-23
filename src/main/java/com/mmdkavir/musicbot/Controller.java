@@ -19,15 +19,15 @@ public final class Controller {
     private final Random random = new Random();
     private int current = -1;
     private boolean repeat, shuffle;
-    private int volume = 50;      // volume other players hear (voice)
-    private int localVolume = 50;  // volume you hear
+    private double volume = 50;      // volume other players hear (voice)
+    private double localVolume = 50;  // volume you hear
     private String message = "";
     private String voice = "Not set";
 
     public Controller(MusicPlayer player) {
         this.player = player;
-        player.setGain(volume / 100f);
-        player.setLocalGain(localVolume / 100f);
+        player.setGain((float) (volume / 100.0));
+        player.setLocalGain((float) (localVolume / 100.0));
         player.setMonitor(true);
         player.setOnFinish(() -> next(true));
     }
@@ -62,14 +62,20 @@ public final class Controller {
     public synchronized void pause() { player.pause(); }
     public synchronized void resume() { player.resume(); }
 
-    public synchronized void setVolume(int v) {
-        volume = Math.max(0, Math.min(200, v));
-        player.setGain(volume / 100f);
+    public synchronized void setVolume(double v) {
+        volume = clampPct(v);
+        player.setGain((float) (volume / 100.0));
     }
 
-    public synchronized void setLocalVolume(int v) {
-        localVolume = Math.max(0, Math.min(200, v));
-        player.setLocalGain(localVolume / 100f);
+    public synchronized void setLocalVolume(double v) {
+        localVolume = clampPct(v);
+        player.setLocalGain((float) (localVolume / 100.0));
+    }
+
+    /** Percent 0..200, rounded to 0.01 so values like 0.5 stay exact. */
+    private static double clampPct(double v) {
+        if (Double.isNaN(v)) return 0;
+        return Math.round(Math.max(0, Math.min(200, v)) * 100.0) / 100.0;
     }
 
     public synchronized void setRepeat(boolean b) { repeat = b; }
@@ -123,9 +129,9 @@ public final class Controller {
     }
 
     public record Snapshot(String status, boolean active, boolean paused, long pos, long dur, int current,
-                           boolean repeat, boolean shuffle, int volume, String voice, String msg,
+                           boolean repeat, boolean shuffle, double volume, String voice, String msg,
                            List<String> queue, boolean ffOk, String ff, boolean monitor, long calls,
-                           int localVolume, long mixed) { }
+                           double localVolume, long mixed) { }
 
     public synchronized Snapshot snapshot() {
         List<String> names = new ArrayList<>();

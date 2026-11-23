@@ -24,7 +24,7 @@
   button:hover{border-color:var(--acc);transform:translateY(-1px)}
   button.p{background:var(--acc);border-color:var(--acc)}
   button.on{background:var(--acc2);color:#04131a;border-color:var(--acc2)}
-  input[type=text],input[type=password]{flex:1;min-width:120px;background:var(--bg);color:var(--fg);border:1px solid #34344f;border-radius:10px;padding:9px 12px;font-size:14px}
+  input[type=text],input[type=password],input[type=number]{flex:1;min-width:120px;background:var(--bg);color:var(--fg);border:1px solid #34344f;border-radius:10px;padding:9px 12px;font-size:14px}
   input[type=range]{flex:1;accent-color:var(--acc)}
   label.chk{font-size:13px;color:var(--mut);display:flex;gap:6px;align-items:center}
   ul{list-style:none;margin:0;padding:0;max-height:300px;overflow:auto}
@@ -57,8 +57,8 @@
       <button id="rep" onclick="toggle('repeat')">🔁 Repeat</button>
       <button id="shu" onclick="toggle('shuffle')">🔀 Shuffle</button>
     </div>
-    <div class="row"><span class="sub" style="width:130px">Volume for others</span><input type="range" id="vol" min="0" max="200" value="50"><span class="sub" id="volv">50%</span></div>
-    <div class="row"><span class="sub" style="width:130px">Volume for me</span><input type="range" id="lvol" min="0" max="200" value="50"><span class="sub" id="lvolv">50%</span></div>
+    <div class="row"><span class="sub" style="width:130px">Volume for others</span><input type="range" id="vol" min="0" max="200" step="0.1" value="50"><input type="number" id="volv" min="0" max="200" step="0.1" value="50" style="width:72px"><span class="sub">%</span></div>
+    <div class="row"><span class="sub" style="width:130px">Volume for me</span><input type="range" id="lvol" min="0" max="200" step="0.1" value="50"><input type="number" id="lvolv" min="0" max="200" step="0.1" value="50" style="width:72px"><span class="sub">%</span></div>
   </section>
 
   <section class="card">
@@ -109,14 +109,14 @@ function addLink(){const u=$('url').value.trim();if(u){act('add-link',{url:u});$
 function addFolder(){const p=$('folder').value.trim();if(p)act('add-folder',{path:p,sub:$('sub').checked?'1':'0'})}
 async function browse(){const r=await post('browse');if(r.path){$('folder').value=r.path}}
 function join(){act('join',{id:$('gid').value,pw:$('gpw').value})}
-$('vol').addEventListener('input',e=>{
-  $('volv').textContent=e.target.value+'%';dragging=true;
-  clearTimeout(volTimer);volTimer=setTimeout(()=>{act('volume',{v:e.target.value});dragging=false},120);
-});
-$('lvol').addEventListener('input',e=>{
-  $('lvolv').textContent=e.target.value+'%';dragging=true;
-  clearTimeout(volTimer);volTimer=setTimeout(()=>{act('volume-local',{v:e.target.value});dragging=false},120);
-});
+function bindVol(sl,num,api){
+  let t=null;
+  const send=v=>{v=Math.max(0,Math.min(200,parseFloat(v)||0));dragging=true;clearTimeout(t);t=setTimeout(()=>{act(api,{v});dragging=false},150)};
+  sl.addEventListener('input',e=>{num.value=e.target.value;send(e.target.value)});
+  num.addEventListener('input',e=>{if(e.target.value==='')return;sl.value=e.target.value;send(e.target.value)});
+}
+bindVol($('vol'),$('volv'),'volume');
+bindVol($('lvol'),$('lvolv'),'volume-local');
 function render(){
   $('title').textContent=S.current>=0&&S.queue[S.current]?S.queue[S.current]:'Nothing playing';
   $('status').textContent=S.status;
@@ -125,7 +125,7 @@ function render(){
   $('time').textContent=fmt(S.pos)+' / '+(S.dur>0?fmt(S.dur):'--:--');
   $('pp').textContent=S.paused?'▶ Resume':'⏸ Pause';
   $('rep').classList.toggle('on',S.repeat);$('shu').classList.toggle('on',S.shuffle);
-  if(!dragging){$('vol').value=S.volume;$('volv').textContent=S.volume+'%';$('lvol').value=S.localVolume;$('lvolv').textContent=S.localVolume+'%'}
+  if(!dragging&&!(document.activeElement&&document.activeElement.type==='number')){$('vol').value=S.volume;$('volv').value=S.volume;$('lvol').value=S.localVolume;$('lvolv').value=S.localVolume}
   $('msg').textContent=S.msg||'';$('voice').textContent=S.voice&&S.voice!=='Not set'?S.voice:'';
   $('ff').textContent=S.ffmpeg;$('ffb').style.display=S.ffmpegOk?'none':'';
   $('mon').checked=!!S.monitor;

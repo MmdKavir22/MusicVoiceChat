@@ -122,13 +122,13 @@ public final class WebServer {
     private String route(String path, Map<String, String> p) {
         switch (path) {
             case "/api/play" -> c.playIndex(num(p.get("i"), -1));
-            case "/api/volume-local" -> c.setLocalVolume(num(p.get("v"), 50));
+            case "/api/volume-local" -> c.setLocalVolume(numD(p.get("v"), 50));
             case "/api/pause" -> c.pause();
             case "/api/resume" -> c.resume();
             case "/api/stop" -> c.stop();
             case "/api/next" -> c.next(false);
             case "/api/prev" -> c.prev();
-            case "/api/volume" -> c.setVolume(num(p.get("v"), 50));
+            case "/api/volume" -> c.setVolume(numD(p.get("v"), 50));
             case "/api/repeat" -> c.setRepeat("1".equals(p.get("on")));
             case "/api/shuffle" -> c.setShuffle("1".equals(p.get("on")));
             case "/api/add-link" -> c.addLink(p.get("url"));
@@ -192,6 +192,10 @@ public final class WebServer {
             return "";
         }
         return result[0];
+    }
+
+    private static double numD(String s, double def) {
+        try { return Double.parseDouble(s); } catch (Exception e) { return def; }
     }
 
     private static int num(String s, int def) {
