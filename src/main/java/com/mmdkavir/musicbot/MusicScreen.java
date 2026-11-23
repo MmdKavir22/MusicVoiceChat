@@ -128,7 +128,6 @@ public final class MusicScreen extends Screen {
     private EditBox percentBox(int x, int y, String val, java.util.function.DoubleConsumer apply) {
         EditBox e = new EditBox(this.font, x, y, 40, 20, Component.literal("Volume %"));
         e.setMaxLength(6);
-        e.setFilter(t -> t.matches("\\d{0,3}(\\.\\d{0,2})?"));
         e.setValue(val);
         e.setResponder(t -> {
             if (!t.isEmpty()) {
